@@ -15,9 +15,32 @@ type CircuitModule = {
 const circuitsDirectory = path.resolve("circuits")
 const samplesDirectory = path.resolve("samples")
 const baseRouteWidth = 0.15
+const generatedNumberPrecision = 9
 
 // Some older registry packages were emitted with the classic JSX runtime.
 Object.assign(globalThis, { React })
+
+const canonicalizeForStableJson = (value: unknown): unknown => {
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) {
+      throw new Error(`cannot serialize non-finite number ${value}`)
+    }
+    const rounded = Number(value.toFixed(generatedNumberPrecision))
+    return Object.is(rounded, -0) ? 0 : rounded
+  }
+  if (Array.isArray(value)) {
+    return value.map(canonicalizeForStableJson)
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        canonicalizeForStableJson(nestedValue),
+      ]),
+    )
+  }
+  return value
+}
 
 const renderCircuit = async (modulePath: string) => {
   const moduleUrl = `${pathToFileURL(modulePath).href}?v=${Date.now()}`
@@ -158,7 +181,7 @@ const generateSample = async (fileName: string) => {
   const outputFileName = `${slug}.srj.json`
   await writeFile(
     path.join(samplesDirectory, outputFileName),
-    `${JSON.stringify(generatedSample, null, 2)}\n`,
+    `${JSON.stringify(canonicalizeForStableJson(generatedSample), null, 2)}\n`,
   )
 
   return {

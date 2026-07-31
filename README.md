@@ -16,7 +16,8 @@ with the dataset intended to support its integration into
 3. Route the board with `@tscircuit/capacity-autorouter`.
 4. Normalize the routed copper to the 0.15 mm base width while preserving each
    authored `nominalTraceWidth`.
-5. Write the post-routing SRJ, manifest, and CommonJS exports.
+5. Canonicalize generated numbers to nine decimal places, then write the
+   post-routing SRJ, manifest, and CommonJS exports.
 
 The last normalization models the handoff to a dedicated late power-width
 stage: connectivity and obstacles are real, but the power copper still needs to
