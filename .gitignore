@@ -4,3 +4,4 @@ coverage/
 cosmos-export/
 .vercel/
 .DS_Store
+.env*
