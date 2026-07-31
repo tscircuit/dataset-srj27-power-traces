@@ -13,11 +13,13 @@
     "LICENSE"
   ],
   "scripts": {
+    "build:site": "cosmos-export",
     "check": "bun run format:check && bun run typecheck && bun run validate && bun test",
     "format": "biome format --write .",
     "format:check": "biome format .",
+    "start": "cosmos",
     "test": "bun test",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -p tsconfig.check.json --noEmit",
     "validate": "bun scripts/validate.mjs"
   },
   "keywords": [
@@ -29,7 +31,17 @@
   ],
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
+    "@tscircuit/core": "^0.0.1470",
+    "@tscircuit/power-trace-expander": "git+https://github.com/tscircuit/power-trace-expander.git#20a08c8c1cf9d94798333cc4bcdcb8c85bd20418",
+    "@tscircuit/solver-utils": "^0.0.19",
     "@types/bun": "latest",
-    "typescript": "^5.9.3"
+    "@types/react": "^19.2.3",
+    "@types/react-dom": "^19.2.3",
+    "react": "^19.2.4",
+    "react-cosmos": "^7.3.0",
+    "react-cosmos-plugin-vite": "^7.3.0",
+    "react-dom": "^19.2.4",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5"
   }
 }
