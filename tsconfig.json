@@ -8,7 +8,9 @@
     "resolveJsonModule": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ESNext"
+    "target": "ESNext",
+    "jsx": "react-jsx",
+    "types": ["bun"]
   },
-  "include": ["index.d.ts", "tests/**/*.ts"]
+  "include": ["fixtures", "index.d.ts", "tests/**/*.ts"]
 }

@@ -66,7 +66,13 @@ const {
 ```sh
 bun install
 bun run check
+bun run start
+bun run build:site
 ```
+
+`bun run start` opens a React Cosmos catalog with one step-through
+`PowerTraceExpanderSolver` debugger per sample. `bun run build:site` writes the
+deployable static catalog to `cosmos-export/`.
 
 The package uses a handwritten CommonJS `index.js` and lightweight
 `index.d.ts`. There is no transpilation or npm release step, following the

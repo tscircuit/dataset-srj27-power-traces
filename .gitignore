@@ -1,4 +1,6 @@
 node_modules/
 bun.lock
 coverage/
+cosmos-export/
+.vercel/
 .DS_Store
