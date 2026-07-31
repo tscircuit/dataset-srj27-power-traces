@@ -1,79 +1,85 @@
 # dataset-srj27-power-traces
 
-Post-routing Simple Route JSON fixtures for evaluating power-trace expansion
-and cleanup after the main PCB autorouter has produced connected traces.
+Realistic tscircuit boards for benchmarking power-trace routing as a late
+autorouter pipeline stage. The source of truth is TSX in `circuits/`; every
+checked-in `samples/*.srj.json` file is generated from those circuits.
 
-The first consumer is
-[`@tscircuit/power-trace-expander`](https://github.com/tscircuit/power-trace-expander).
-The dataset is also shaped for a future final stage in
-[`@tscircuit/capacity-autorouter`](https://github.com/tscircuit/tscircuit-autorouter):
+The initial consumer is
+[`@tscircuit/power-trace-expander`](https://github.com/tscircuit/power-trace-expander),
+with the dataset intended to support its integration into
+[`@tscircuit/capacity-autorouter`](https://github.com/tscircuit/tscircuit-autorouter).
 
-1. Pipeline 7 routes every connection and runs its existing post-processing.
-2. The pipeline emits Simple Route JSON with populated `traces`.
-3. The power-trace stage expands copper toward each connection's
-   `nominalTraceWidth`, repairs preferred pad clearance, and cleans up avoidable
-   vias or non-octilinear geometry.
+## Dataset pipeline
 
-## Sample contract
+1. Render each default-exported `.circuit.tsx` board with `RootCircuit`.
+2. Convert Circuit JSON with `getSimpleRouteJsonFromCircuitJson`.
+3. Route the board with `@tscircuit/capacity-autorouter`.
+4. Normalize the routed copper to the 0.15 mm base width while preserving each
+   authored `nominalTraceWidth`.
+5. Write the post-routing SRJ, manifest, and CommonJS exports.
 
-Every `samples/*.srj.json` file is a complete, post-routing problem with:
+The last normalization models the handoff to a dedicated late power-width
+stage: connectivity and obstacles are real, but the power copper still needs to
+be expanded. The declared widths are benchmark requirements, not a substitute
+for fabrication-specific current-capacity and thermal review.
 
-- populated `traces` containing wire widths and any routed vias
-- a matching connection for every selected trace
-- per-connection `nominalTraceWidth`
-- explicit board bounds, layer count, trace clearance, and via dimensions
-- obstacles with connectivity aliases when same-net copper is relevant
-- deterministic metadata in `manifest.json`
+## Boards
 
-The routed input may be electrically connected while still having insufficient
-copper width or undesirable cleanup geometry. This distinction is the point of
-the dataset.
+| Sample | Circuit | Power requirements |
+| --- | --- | --- |
+| `sample001` | USB-C Pico W controller with AP2112K auxiliary rail | 5 V / 1.5 A input; 3.3 V / 0.6 A output |
+| `sample002` | TB6612FNG dual brushed-motor controller | 12 V / 2.4 A supply; four 1.2 A motor phases |
+| `sample003` | Pico W with twelve WS2812B-2020 pixels | 5 V / 0.72 A distributed pixel rail |
+| `sample004` | TP4056 USB-C Li-ion charger with AP2112K load rail | 5 V / 1 A charge input; 4.2 V / 1 A battery path |
+| `sample005` | PT4115 constant-current LED buck | 24 V / 0.8 A input; 700 mA LED path |
+| `sample006` | ACS37800 inline power monitor | 12 V / 5 A pass-through; 3.3 V I2C logic |
 
-## Seed scenarios
+Key components use real package data: the USB-C receptacle, Pico W,
+TB6612FNG, and WS2812B-2020 come from tscircuit registry packages; AP2112K,
+TP4056, PT4115, and ACS37800 wrappers carry real manufacturer and JLCPCB part
+numbers with their package footprints.
 
-| Sample | Focus |
-| --- | --- |
-| `sample001` | Clear, under-width straight power route |
-| `sample002` | Channel that admits an intermediate width but not nominal width |
-| `sample003` | Wide power corridor blocked by a lower-width movable signal |
-| `sample004` | Top-layer wall requiring a bounded multilayer reroute and terminal necking |
-| `sample005` | Under-width power route that also needs unrelated-pad clearance repair |
-| `sample006` | Same-net aliases, connected pads, child copper, and a fixed via |
+Each TSX module also exports `sampleMetadata.powerNets`. Generation resolves
+the human-readable rail name to the concrete SRJ `connectionName`, making the
+voltage, current, and nominal-width requirement machine-readable.
 
-These synthetic samples keep the initial review small. Production-derived
-samples should be added with immutable source provenance and the same manifest
-fields.
+## Generate and verify
+
+```sh
+bun install
+bun run generate
+bun run check
+```
+
+`bun run check` validates source provenance, generated metadata, route shape,
+base widths, package exports, and runs every sample through the real
+`PowerTraceExpanderSolver`. CI regenerates the corpus and fails if committed
+artifacts differ.
+
+To inspect an authored circuit or the generated solver catalog:
+
+```sh
+bun run dev
+bun run start
+bun run build:site
+```
+
+`bun run start` opens React Cosmos with one step-through solver fixture per
+board. `bun run build:site` writes the Vercel-ready catalog to
+`cosmos-export/`.
 
 ## Usage
 
-Install directly from GitHub; this dataset is intentionally not published to
-npm.
+This dataset follows the tscircuit handbook convention: it is installed from
+GitHub, uses a handwritten/generated CommonJS `index.js` plus `index.d.ts`, and
+is not published to npm.
 
 ```sh
 bun add -D https://github.com/tscircuit/dataset-srj27-power-traces
 ```
 
 ```js
-const {
-  dataset,
-  manifest,
-  sample001,
-} = require("@tscircuit/dataset-srj27-power-traces")
+const { dataset, manifest, sample001 } = require(
+  "@tscircuit/dataset-srj27-power-traces",
+)
 ```
-
-## Development
-
-```sh
-bun install
-bun run check
-bun run start
-bun run build:site
-```
-
-`bun run start` opens a React Cosmos catalog with one step-through
-`PowerTraceExpanderSolver` debugger per sample. `bun run build:site` writes the
-deployable static catalog to `cosmos-export/`.
-
-The package uses a handwritten CommonJS `index.js` and lightweight
-`index.d.ts`. There is no transpilation or npm release step, following the
-tscircuit handbook's dataset guidelines.

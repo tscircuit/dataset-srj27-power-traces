@@ -1,8 +1,8 @@
-import type { SimpleRouteJson } from "@tscircuit/core"
+import type { SimpleRouteJson } from "tscircuit"
 import { PowerTraceDatasetDebugger } from "../PowerTraceDatasetDebugger"
-import sample from "../../samples/sample002-intermediate-width-channel.srj.json"
+import sample from "../../samples/sample002-dual-motor-driver.srj.json"
 
-export default function IntermediateWidthChannelFixture() {
+export default function DualMotorDriverFixture() {
   return (
     <PowerTraceDatasetDebugger problem={sample as unknown as SimpleRouteJson} />
   )

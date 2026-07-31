@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs"
+import { existsSync, readFileSync, readdirSync } from "node:fs"
 import { createRequire } from "node:module"
 import { dirname, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -10,19 +10,27 @@ const repositoryDirectory = resolve(
 )
 const packageExports = require(resolve(repositoryDirectory, "index.js"))
 const manifest = packageExports.manifest
-
 const fail = (message) => {
   throw new Error(message)
 }
 
-const assertPositiveNumber = (number, fieldName, sampleId) => {
-  if (!Number.isFinite(number) || number <= 0) {
+const assertPositiveNumber = (value, fieldName, sampleId) => {
+  if (!Number.isFinite(value) || value <= 0) {
     fail(`${sampleId}: ${fieldName} must be a positive number`)
   }
 }
 
-const getNominalTraceWidth = (trace, connections) => {
-  const traceAliases = new Set(
+const getConnectionAliases = (connection) =>
+  [
+    connection.name,
+    connection.source_trace_id,
+    connection.rootConnectionName,
+    connection.netConnectionName,
+    ...(connection.mergedConnectionNames ?? []),
+  ].filter(Boolean)
+
+const getTraceAliases = (trace) =>
+  new Set(
     [
       trace.connection_name,
       trace.source_trace_id,
@@ -32,20 +40,15 @@ const getNominalTraceWidth = (trace, connections) => {
     ].filter(Boolean),
   )
 
-  return connections.find((connection) => {
-    const connectionAliases = [
-      connection.name,
-      connection.source_trace_id,
-      connection.rootConnectionName,
-      connection.netConnectionName,
-      ...(connection.mergedConnectionNames ?? []),
-    ].filter(Boolean)
-    return connectionAliases.some((alias) => traceAliases.has(alias))
-  })?.nominalTraceWidth
+const getConnectionForTrace = (trace, connections) => {
+  const traceAliases = getTraceAliases(trace)
+  return connections.find((connection) =>
+    getConnectionAliases(connection).some((alias) => traceAliases.has(alias)),
+  )
 }
 
-const validateBounds = (sample) => {
-  const { bounds, id: sampleId } = sample
+const validateBounds = (sample, sampleId) => {
+  const { bounds } = sample
   if (
     !bounds ||
     !Number.isFinite(bounds.minX) ||
@@ -66,21 +69,71 @@ const validateBounds = (sample) => {
         routePoint.y < bounds.minY ||
         routePoint.y > bounds.maxY
       ) {
-        fail(
-          `${sampleId}: ${trace.pcb_trace_id} has a route point outside bounds`,
-        )
+        fail(`${sampleId}: ${trace.pcb_trace_id} leaves the board bounds`)
       }
+    }
+  }
+}
+
+const validatePowerNets = (sample, manifestSample) => {
+  const sampleId = manifestSample.sampleId
+  const metadataPowerNets = sample.metadata?.powerNets
+  if (
+    !Array.isArray(manifestSample.powerNets) ||
+    manifestSample.powerNets.length === 0
+  ) {
+    fail(`${sampleId}: manifest needs authored power requirements`)
+  }
+  if (
+    JSON.stringify(metadataPowerNets) !==
+    JSON.stringify(manifestSample.powerNets)
+  ) {
+    fail(`${sampleId}: SRJ and manifest power requirements differ`)
+  }
+
+  for (const powerNet of manifestSample.powerNets) {
+    if (!powerNet.net || !powerNet.purpose || !powerNet.connectionName) {
+      fail(
+        `${sampleId}: every power requirement needs net, purpose, and connectionName`,
+      )
+    }
+    if (!Number.isFinite(powerNet.voltage) || powerNet.voltage < 0) {
+      fail(`${sampleId}: ${powerNet.net} voltage must be non-negative`)
+    }
+    assertPositiveNumber(
+      powerNet.maxCurrentA,
+      `${powerNet.net} maxCurrentA`,
+      sampleId,
+    )
+    assertPositiveNumber(
+      powerNet.nominalTraceWidthMm,
+      `${powerNet.net} nominalTraceWidthMm`,
+      sampleId,
+    )
+
+    const connection = sample.connections.find(
+      ({ name }) => name === powerNet.connectionName,
+    )
+    if (!connection) {
+      fail(`${sampleId}: ${powerNet.net} connection is missing from the SRJ`)
+    }
+    if (
+      Math.abs(connection.nominalTraceWidth - powerNet.nominalTraceWidthMm) >
+      1e-6
+    ) {
+      fail(`${sampleId}: ${powerNet.net} nominal width was not preserved`)
     }
   }
 }
 
 const validateSample = (sample, manifestSample) => {
   const sampleId = manifestSample.sampleId
-  if (
-    sample.id !== manifestSample.file.split("/").at(-1).replace(".srj.json", "")
-  ) {
+  const expectedId = manifestSample.file
+    .split("/")
+    .at(-1)
+    .replace(".srj.json", "")
+  if (sample.id !== expectedId)
     fail(`${sampleId}: JSON id must match its filename`)
-  }
   if (!Number.isInteger(sample.layerCount) || sample.layerCount < 1) {
     fail(`${sampleId}: layerCount must be a positive integer`)
   }
@@ -89,10 +142,17 @@ const validateSample = (sample, manifestSample) => {
     fail(`${sampleId}: connections must be populated`)
   }
   if (!Array.isArray(sample.traces) || sample.traces.length === 0) {
-    fail(`${sampleId}: traces must be populated for a post-routing dataset`)
+    fail(`${sampleId}: routed traces must be populated`)
   }
-  if (!Array.isArray(sample.obstacles)) {
+  if (!Array.isArray(sample.obstacles))
     fail(`${sampleId}: obstacles must be an array`)
+  if (sample.metadata?.source !== manifestSample.source) {
+    fail(`${sampleId}: generated SRJ must name its TSX source`)
+  }
+  if (sample.metadata?.generation?.normalizedAfterBaseRouting !== true) {
+    fail(
+      `${sampleId}: generation metadata must identify base-route normalization`,
+    )
   }
 
   for (const connection of sample.connections) {
@@ -119,94 +179,105 @@ const validateSample = (sample, manifestSample) => {
     if (!Array.isArray(trace.route) || trace.route.length < 2) {
       fail(`${sampleId}: ${trace.pcb_trace_id} needs at least two route points`)
     }
-
-    const nominalTraceWidth = getNominalTraceWidth(trace, sample.connections)
-    if (nominalTraceWidth === undefined) {
+    const connection = getConnectionForTrace(trace, sample.connections)
+    if (!connection) {
       fail(
-        `${sampleId}: ${trace.pcb_trace_id} does not resolve to a connection alias`,
+        `${sampleId}: ${trace.pcb_trace_id} does not resolve to a connection`,
       )
     }
 
     for (const routePoint of trace.route) {
       if (!Number.isFinite(routePoint.x) || !Number.isFinite(routePoint.y)) {
-        fail(`${sampleId}: ${trace.pcb_trace_id} has a non-finite route point`)
+        fail(`${sampleId}: ${trace.pcb_trace_id} has a non-finite point`)
       }
       if (routePoint.route_type === "wire") {
         assertPositiveNumber(routePoint.width, "wire width", sampleId)
-        if (!routePoint.layer)
-          fail(`${sampleId}: wire route points require a layer`)
-        if (
-          nominalTraceWidth > sample.minTraceWidth &&
-          routePoint.width < nominalTraceWidth
-        ) {
+        if (!routePoint.layer) fail(`${sampleId}: wire points require a layer`)
+        if (Math.abs(routePoint.width - sample.minTraceWidth) > 1e-6) {
+          fail(`${sampleId}: base-route wires must use minTraceWidth`)
+        }
+        if (connection.nominalTraceWidth > routePoint.width + 1e-6) {
           hasUnderWidthPowerCopper = true
         }
       } else if (routePoint.route_type === "via") {
         if (!routePoint.from_layer || !routePoint.to_layer) {
-          fail(`${sampleId}: via route points require from_layer and to_layer`)
+          fail(`${sampleId}: via points require from_layer and to_layer`)
         }
       } else {
         fail(`${sampleId}: unsupported route_type ${routePoint.route_type}`)
       }
     }
   }
-
   if (!hasUnderWidthPowerCopper) {
-    fail(`${sampleId}: expected at least one under-width power segment`)
+    fail(`${sampleId}: expected under-width copper for the late pipeline stage`)
   }
 
   for (const obstacle of sample.obstacles) {
-    if (obstacle.type !== "rect")
-      fail(`${sampleId}: obstacles must be rectangles`)
+    if (obstacle.type !== "rect" && obstacle.type !== "oval") {
+      fail(`${sampleId}: unsupported obstacle type ${obstacle.type}`)
+    }
     assertPositiveNumber(obstacle.width, "obstacle width", sampleId)
     assertPositiveNumber(obstacle.height, "obstacle height", sampleId)
     if (!Array.isArray(obstacle.layers) || obstacle.layers.length === 0) {
-      fail(`${sampleId}: obstacles require at least one layer`)
+      fail(`${sampleId}: obstacles require a layer`)
     }
     if (!Array.isArray(obstacle.connectedTo)) {
       fail(`${sampleId}: obstacle connectedTo must be an array`)
     }
   }
 
-  validateBounds(sample)
+  validatePowerNets(sample, manifestSample)
+  validateBounds(sample, sampleId)
 }
 
-if (manifest.manifestVersion !== 1) fail("Unsupported manifestVersion")
-if (manifest.datasetName !== "dataset-srj27-power-traces") {
+if (manifest.manifestVersion !== 2) fail("Unsupported manifestVersion")
+if (manifest.datasetName !== "dataset-srj27-power-traces")
   fail("Unexpected datasetName")
-}
+if (manifest.sourceFormat !== "tscircuit_tsx")
+  fail("Expected TSX source format")
 if (!Array.isArray(manifest.samples) || manifest.samples.length === 0) {
   fail("Manifest must include samples")
 }
 
-const sampleIds = new Set()
-const sampleFiles = new Set()
+const manifestFiles = new Set()
 for (const [sampleIndex, manifestSample] of manifest.samples.entries()) {
-  const expectedSampleId = `sample${String(sampleIndex + 1).padStart(3, "0")}`
-  if (manifestSample.sampleId !== expectedSampleId) {
-    fail(`Expected ${expectedSampleId}, received ${manifestSample.sampleId}`)
+  const sampleId = `sample${String(sampleIndex + 1).padStart(3, "0")}`
+  if (manifestSample.sampleId !== sampleId) {
+    fail(`Expected ${sampleId}, received ${manifestSample.sampleId}`)
   }
-  if (sampleIds.has(manifestSample.sampleId))
-    fail(`Duplicate ${manifestSample.sampleId}`)
-  if (sampleFiles.has(manifestSample.file))
-    fail(`Duplicate ${manifestSample.file}`)
-  sampleIds.add(manifestSample.sampleId)
-  sampleFiles.add(manifestSample.file)
+  if (manifestSample.origin !== "tsx") fail(`${sampleId}: origin must be tsx`)
+  if (!manifestSample.source.endsWith(".circuit.tsx")) {
+    fail(`${sampleId}: source must be a .circuit.tsx file`)
+  }
+  const sourcePath = resolve(repositoryDirectory, manifestSample.source)
+  if (!existsSync(sourcePath))
+    fail(`${sampleId}: missing ${manifestSample.source}`)
+  const source = readFileSync(sourcePath, "utf8")
+  if (!source.includes("export default") || !source.includes("powerNets")) {
+    fail(`${sampleId}: TSX source must export a circuit and power requirements`)
+  }
 
   const samplePath = resolve(repositoryDirectory, manifestSample.file)
   if (!existsSync(samplePath))
-    fail(`${manifestSample.sampleId}: missing ${manifestSample.file}`)
+    fail(`${sampleId}: missing ${manifestSample.file}`)
+  manifestFiles.add(manifestSample.file.split("/").at(-1))
   const sample = JSON.parse(readFileSync(samplePath, "utf8"))
-  if (packageExports[manifestSample.sampleId] === undefined) {
-    fail(`${manifestSample.sampleId}: missing index.js export`)
+  if (packageExports[sampleId] === undefined) {
+    fail(`${sampleId}: missing index.js export`)
   }
   validateSample(sample, manifestSample)
 }
 
+const actualSampleFiles = readdirSync(resolve(repositoryDirectory, "samples"))
+  .filter((fileName) => fileName.endsWith(".srj.json"))
+  .sort()
+if (actualSampleFiles.some((fileName) => !manifestFiles.has(fileName))) {
+  fail("samples/ contains SRJ files that are not generated into the manifest")
+}
 if (existsSync(resolve(repositoryDirectory, "index.ts"))) {
   fail("Dataset packages must not contain index.ts")
 }
 
 console.log(
-  `Validated ${manifest.samples.length} post-routing power-trace samples`,
+  `Validated ${manifest.samples.length} TSX-backed power-trace samples`,
 )

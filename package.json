@@ -1,7 +1,7 @@
 {
   "name": "@tscircuit/dataset-srj27-power-traces",
   "version": "0.0.1",
-  "description": "Post-routing Simple Route JSON fixtures for power-trace expansion and cleanup",
+  "description": "Realistic TSX circuit boards converted to post-routing SRJ power-trace benchmarks",
   "private": true,
   "main": "index.js",
   "types": "index.d.ts",
@@ -9,14 +9,20 @@
     "index.js",
     "index.d.ts",
     "manifest.json",
+    "circuits",
+    "components",
     "samples",
     "LICENSE"
   ],
   "scripts": {
-    "build:site": "cosmos-export",
+    "build": "bun run generate",
+    "build:circuits": "tsci build circuits --routing-disabled --ignore-netlist-drc --ignore-pin-specification-drc",
+    "build:site": "bun run generate && cosmos-export",
     "check": "bun run format:check && bun run typecheck && bun run validate && bun test",
+    "dev": "tsci dev",
     "format": "biome format --write .",
     "format:check": "biome format .",
+    "generate": "bun scripts/generate-dataset.tsx && biome format --write index.js manifest.json samples",
     "start": "cosmos",
     "test": "bun test",
     "typecheck": "tsc -p tsconfig.check.json --noEmit",
@@ -31,7 +37,12 @@
   ],
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
-    "@tscircuit/core": "^0.0.1470",
+    "@tsci/imrishabh18.TB6612FNG": "0.1.0",
+    "@tsci/seveibar.PICO_W": "0.1.0",
+    "@tsci/seveibar.WS2812B_2020": "1.0.0",
+    "@tsci/seveibar.smd-usb-c": "0.0.2",
+    "@tscircuit/capacity-autorouter": "0.0.732",
+    "@tscircuit/core": "^0.0.1565",
     "@tscircuit/power-trace-expander": "git+https://github.com/tscircuit/power-trace-expander.git#20a08c8c1cf9d94798333cc4bcdcb8c85bd20418",
     "@tscircuit/solver-utils": "^0.0.19",
     "@types/bun": "latest",
@@ -41,6 +52,7 @@
     "react-cosmos": "^7.3.0",
     "react-cosmos-plugin-vite": "^7.3.0",
     "react-dom": "^19.2.4",
+    "tscircuit": "0.0.2193",
     "typescript": "^5.9.3",
     "vite": "^8.1.5"
   }

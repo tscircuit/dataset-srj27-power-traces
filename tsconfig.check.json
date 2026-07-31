@@ -5,5 +5,13 @@
       "@tscircuit/power-trace-expander": ["./types/power-trace-expander.d.ts"]
     }
   },
-  "include": ["fixtures", "index.d.ts", "tests/**/*.ts", "types"]
+  "include": [
+    "circuits",
+    "components",
+    "fixtures",
+    "index.d.ts",
+    "scripts/**/*.tsx",
+    "tests/**/*.ts",
+    "types"
+  ]
 }

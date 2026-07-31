@@ -15,11 +15,23 @@ describe("dataset exports", () => {
 
   test("uses the post-routing power-trace manifest contract", () => {
     expect(datasetPackage.manifest).toMatchObject({
-      manifestVersion: 1,
+      manifestVersion: 2,
       datasetName: "dataset-srj27-power-traces",
       format: "simple_route_json",
+      sourceFormat: "tscircuit_tsx",
       pipelineStage: "post_routing_power_trace_expansion",
       primaryConsumer: "@tscircuit/power-trace-expander",
     })
+  })
+
+  test("links every generated SRJ to an authored TSX circuit", () => {
+    for (const sample of datasetPackage.manifest.samples) {
+      expect(sample.origin).toBe("tsx")
+      expect(sample.source).toEndWith(".circuit.tsx")
+      expect(sample.powerNets.length).toBeGreaterThan(0)
+      expect(datasetPackage.dataset[sample.sampleId].metadata.source).toBe(
+        sample.source,
+      )
+    }
   })
 })

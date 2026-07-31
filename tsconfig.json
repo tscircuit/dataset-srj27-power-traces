@@ -12,5 +12,12 @@
     "jsx": "react-jsx",
     "types": ["bun"]
   },
-  "include": ["fixtures", "index.d.ts", "tests/**/*.ts"]
+  "include": [
+    "circuits",
+    "components",
+    "fixtures",
+    "index.d.ts",
+    "scripts/**/*.tsx",
+    "tests/**/*.ts"
+  ]
 }

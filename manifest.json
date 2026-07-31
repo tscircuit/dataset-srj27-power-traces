@@ -1,51 +1,278 @@
 {
-  "manifestVersion": 1,
+  "manifestVersion": 2,
   "datasetName": "dataset-srj27-power-traces",
   "format": "simple_route_json",
+  "sourceFormat": "tscircuit_tsx",
   "pipelineStage": "post_routing_power_trace_expansion",
   "primaryConsumer": "@tscircuit/power-trace-expander",
   "samples": [
     {
       "sampleId": "sample001",
-      "file": "samples/sample001-straight-underwidth.srj.json",
-      "title": "Straight under-width power route",
-      "origin": "synthetic",
-      "tags": ["planar", "under_width", "unobstructed"]
+      "file": "samples/sample001-usbc-pico-power.srj.json",
+      "source": "circuits/sample001-usbc-pico-power.circuit.tsx",
+      "title": "USB-C Pico W controller with auxiliary 3.3 V rail",
+      "origin": "tsx",
+      "tags": ["usb_c", "pico_w", "ldo", "mixed_signal"],
+      "powerNets": [
+        {
+          "net": "VBUS_RAW",
+          "voltage": 5,
+          "maxCurrentA": 1.5,
+          "nominalTraceWidthMm": 1.2,
+          "purpose": "USB-C receptacle to input fuse",
+          "connectionName": "source_net_0"
+        },
+        {
+          "net": "V5_PROTECTED",
+          "voltage": 5,
+          "maxCurrentA": 1.2,
+          "nominalTraceWidthMm": 1,
+          "purpose": "Protected controller and regulator input rail",
+          "connectionName": "source_net_1"
+        },
+        {
+          "net": "V3V3_AUX",
+          "voltage": 3.3,
+          "maxCurrentA": 0.6,
+          "nominalTraceWidthMm": 0.65,
+          "purpose": "Auxiliary sensor rail from AP2112K",
+          "connectionName": "source_net_2"
+        },
+        {
+          "net": "GND",
+          "voltage": 0,
+          "maxCurrentA": 1.5,
+          "nominalTraceWidthMm": 1.2,
+          "purpose": "Power return",
+          "connectionName": "source_net_3"
+        }
+      ]
     },
     {
       "sampleId": "sample002",
-      "file": "samples/sample002-intermediate-width-channel.srj.json",
-      "title": "Intermediate-width constrained channel",
-      "origin": "synthetic",
-      "tags": ["planar", "under_width", "constrained_width", "obstacle"]
+      "file": "samples/sample002-dual-motor-driver.srj.json",
+      "source": "circuits/sample002-dual-motor-driver.circuit.tsx",
+      "title": "TB6612FNG dual brushed-motor controller",
+      "origin": "tsx",
+      "tags": ["motor_driver", "h_bridge", "12v", "high_current"],
+      "powerNets": [
+        {
+          "net": "VM_12V",
+          "voltage": 12,
+          "maxCurrentA": 2.4,
+          "nominalTraceWidthMm": 1.6,
+          "purpose": "Shared H-bridge motor supply",
+          "connectionName": "source_net_0"
+        },
+        {
+          "net": "MOTOR_A1",
+          "voltage": 12,
+          "maxCurrentA": 1.2,
+          "nominalTraceWidthMm": 1.1,
+          "purpose": "Switched motor phase",
+          "connectionName": "source_net_1"
+        },
+        {
+          "net": "MOTOR_A2",
+          "voltage": 12,
+          "maxCurrentA": 1.2,
+          "nominalTraceWidthMm": 1.1,
+          "purpose": "Switched motor phase",
+          "connectionName": "source_net_2"
+        },
+        {
+          "net": "MOTOR_B1",
+          "voltage": 12,
+          "maxCurrentA": 1.2,
+          "nominalTraceWidthMm": 1.1,
+          "purpose": "Switched motor phase",
+          "connectionName": "source_net_3"
+        },
+        {
+          "net": "MOTOR_B2",
+          "voltage": 12,
+          "maxCurrentA": 1.2,
+          "nominalTraceWidthMm": 1.1,
+          "purpose": "Switched motor phase",
+          "connectionName": "source_net_4"
+        },
+        {
+          "net": "VCC_3V3",
+          "voltage": 3.3,
+          "maxCurrentA": 0.1,
+          "nominalTraceWidthMm": 0.35,
+          "purpose": "Driver logic supply",
+          "connectionName": "source_net_5"
+        },
+        {
+          "net": "GND",
+          "voltage": 0,
+          "maxCurrentA": 2.4,
+          "nominalTraceWidthMm": 1.6,
+          "purpose": "Motor and logic return",
+          "connectionName": "source_net_6"
+        }
+      ]
     },
     {
       "sampleId": "sample003",
-      "file": "samples/sample003-signal-shove.srj.json",
-      "title": "Power corridor blocked by a lower-width signal",
-      "origin": "synthetic",
-      "tags": ["planar", "under_width", "trace_shove", "mixed_width"]
+      "file": "samples/sample003-pico-led-matrix.srj.json",
+      "source": "circuits/sample003-pico-led-matrix.circuit.tsx",
+      "title": "Pico W twelve-pixel status panel",
+      "origin": "tsx",
+      "tags": ["led_matrix", "ws2812", "pico_w", "multipoint_power"],
+      "powerNets": [
+        {
+          "net": "V5_INPUT",
+          "voltage": 5,
+          "maxCurrentA": 1,
+          "nominalTraceWidthMm": 1,
+          "purpose": "Connector-to-fuse input",
+          "connectionName": "source_net_0"
+        },
+        {
+          "net": "V5_PIXELS",
+          "voltage": 5,
+          "maxCurrentA": 0.72,
+          "nominalTraceWidthMm": 0.85,
+          "purpose": "Distributed pixel and Pico supply",
+          "connectionName": "source_net_1"
+        },
+        {
+          "net": "GND",
+          "voltage": 0,
+          "maxCurrentA": 1,
+          "nominalTraceWidthMm": 1,
+          "purpose": "Pixel current return",
+          "connectionName": "source_net_2"
+        }
+      ]
     },
     {
       "sampleId": "sample004",
-      "file": "samples/sample004-multilayer-necking.srj.json",
-      "title": "Multilayer bypass with terminal necking",
-      "origin": "synthetic",
-      "tags": ["multilayer", "under_width", "via", "terminal_neck"]
+      "file": "samples/sample004-usbc-lipo-charger.srj.json",
+      "source": "circuits/sample004-usbc-lipo-charger.circuit.tsx",
+      "title": "USB-C single-cell Li-ion charger and sensor supply",
+      "origin": "tsx",
+      "tags": ["usb_c", "li_ion", "charger", "ldo"],
+      "powerNets": [
+        {
+          "net": "USB_5V",
+          "voltage": 5,
+          "maxCurrentA": 1,
+          "nominalTraceWidthMm": 0.9,
+          "purpose": "USB-C input and charger supply",
+          "connectionName": "source_net_0"
+        },
+        {
+          "net": "BAT_4V2",
+          "voltage": 4.2,
+          "maxCurrentA": 1,
+          "nominalTraceWidthMm": 0.9,
+          "purpose": "Charge path and battery output",
+          "connectionName": "source_net_1"
+        },
+        {
+          "net": "V3V3_LOAD",
+          "voltage": 3.3,
+          "maxCurrentA": 0.5,
+          "nominalTraceWidthMm": 0.6,
+          "purpose": "Regulated sensor/load output",
+          "connectionName": "source_net_2"
+        },
+        {
+          "net": "GND",
+          "voltage": 0,
+          "maxCurrentA": 1,
+          "nominalTraceWidthMm": 0.9,
+          "purpose": "Charge and load return",
+          "connectionName": "source_net_3"
+        }
+      ]
     },
     {
       "sampleId": "sample005",
-      "file": "samples/sample005-pad-clearance.srj.json",
-      "title": "Power width and unrelated-pad clearance repair",
-      "origin": "synthetic",
-      "tags": ["planar", "under_width", "pad_clearance", "cleanup"]
+      "file": "samples/sample005-pt4115-led-driver.srj.json",
+      "source": "circuits/sample005-pt4115-led-driver.circuit.tsx",
+      "title": "PT4115 24 V constant-current LED driver",
+      "origin": "tsx",
+      "tags": ["led_driver", "buck", "24v", "switch_node"],
+      "powerNets": [
+        {
+          "net": "VIN_24V",
+          "voltage": 24,
+          "maxCurrentA": 0.8,
+          "nominalTraceWidthMm": 0.85,
+          "purpose": "Input, bypass, freewheel diode, and current-sense feed",
+          "connectionName": "source_net_0"
+        },
+        {
+          "net": "LED_700MA",
+          "voltage": 22,
+          "maxCurrentA": 0.7,
+          "nominalTraceWidthMm": 0.8,
+          "purpose": "Regulated LED-string current",
+          "connectionName": "source_net_1"
+        },
+        {
+          "net": "SW_NODE",
+          "voltage": 24,
+          "maxCurrentA": 0.8,
+          "nominalTraceWidthMm": 0.85,
+          "purpose": "PT4115 switch, inductor, and freewheel diode loop",
+          "connectionName": "source_net_2"
+        },
+        {
+          "net": "GND",
+          "voltage": 0,
+          "maxCurrentA": 0.8,
+          "nominalTraceWidthMm": 0.85,
+          "purpose": "Converter return and thermal pad",
+          "connectionName": "source_net_3"
+        }
+      ]
     },
     {
       "sampleId": "sample006",
-      "file": "samples/sample006-same-net-aliases.srj.json",
-      "title": "Same-net aliases and fixed via context",
-      "origin": "synthetic",
-      "tags": ["multilayer", "under_width", "same_net", "alias", "fixed_via"]
+      "file": "samples/sample006-acs37800-power-meter.srj.json",
+      "source": "circuits/sample006-acs37800-power-meter.circuit.tsx",
+      "title": "ACS37800 12 V / 5 A power monitor",
+      "origin": "tsx",
+      "tags": ["power_meter", "current_sensor", "12v", "i2c", "high_current"],
+      "powerNets": [
+        {
+          "net": "POWER_IN_12V",
+          "voltage": 12,
+          "maxCurrentA": 5,
+          "nominalTraceWidthMm": 2.2,
+          "purpose": "Input terminal to current-sense conductor",
+          "connectionName": "source_net_0"
+        },
+        {
+          "net": "POWER_OUT_12V",
+          "voltage": 12,
+          "maxCurrentA": 5,
+          "nominalTraceWidthMm": 2.2,
+          "purpose": "Current-sense conductor to output terminal",
+          "connectionName": "source_net_1"
+        },
+        {
+          "net": "VCC_3V3",
+          "voltage": 3.3,
+          "maxCurrentA": 0.1,
+          "nominalTraceWidthMm": 0.35,
+          "purpose": "Sensor and I2C supply",
+          "connectionName": "source_net_2"
+        },
+        {
+          "net": "GND",
+          "voltage": 0,
+          "maxCurrentA": 0.1,
+          "nominalTraceWidthMm": 0.35,
+          "purpose": "Logic return",
+          "connectionName": "source_net_3"
+        }
+      ]
     }
   ]
 }

@@ -18,5 +18,7 @@ jobs:
         with:
           bun-version: 1.3.8
       - run: bun install
+      - run: bun run generate
+      - run: git diff --exit-code -- index.js manifest.json samples
       - run: bun run validate
       - run: bun test

@@ -30,16 +30,14 @@ export interface SimplifiedPcbTrace {
   route: RoutePoint[]
 }
 
-export interface SimpleRouteConnectionPointBase {
+export interface SimpleRouteConnectionPoint {
   x: number
   y: number
+  layer?: string
+  layers?: string[]
   pointId?: string
   pcb_port_id?: string
 }
-
-export type SimpleRouteConnectionPoint =
-  | (SimpleRouteConnectionPointBase & { layer: string })
-  | (SimpleRouteConnectionPointBase & { layers: string[] })
 
 export interface SimpleRouteConnection {
   name: string
@@ -65,6 +63,29 @@ export interface SimpleRouteObstacle {
   isCopperPour?: boolean
 }
 
+export interface PowerNetRequirement {
+  net: string
+  connectionName: string
+  voltage: number
+  maxCurrentA: number
+  nominalTraceWidthMm: number
+  purpose: string
+}
+
+export interface GeneratedSampleMetadata {
+  source: string
+  title: string
+  application: string
+  tags: string[]
+  powerNets: PowerNetRequirement[]
+  generation: {
+    circuitJsonToSrj: "getSimpleRouteJsonFromCircuitJson"
+    baseAutorouter: "@tscircuit/capacity-autorouter"
+    baseRouteWidthMm: number
+    normalizedAfterBaseRouting: true
+  }
+}
+
 export interface SimpleRouteJson {
   id: string
   layerCount: number
@@ -80,23 +101,24 @@ export interface SimpleRouteJson {
   bounds: { minX: number; maxX: number; minY: number; maxY: number }
   outline?: Array<{ x: number; y: number }>
   traces: SimplifiedPcbTrace[]
+  metadata: GeneratedSampleMetadata
 }
 
 export interface DatasetManifestSample {
   sampleId: string
   file: string
+  source: string
   title: string
-  origin: "synthetic" | "production"
+  origin: "tsx"
   tags: string[]
-  sourceUrl?: string
-  sourceCommit?: string
-  sourceLicense?: string
+  powerNets: PowerNetRequirement[]
 }
 
 export interface DatasetManifest {
-  manifestVersion: 1
+  manifestVersion: 2
   datasetName: "dataset-srj27-power-traces"
   format: "simple_route_json"
+  sourceFormat: "tscircuit_tsx"
   pipelineStage: "post_routing_power_trace_expansion"
   primaryConsumer: "@tscircuit/power-trace-expander"
   samples: DatasetManifestSample[]
@@ -109,7 +131,6 @@ export const sample003: SimpleRouteJson
 export const sample004: SimpleRouteJson
 export const sample005: SimpleRouteJson
 export const sample006: SimpleRouteJson
-
 export const dataset: Record<string, SimpleRouteJson>
 declare const defaultDataset: Record<string, SimpleRouteJson>
 export default defaultDataset
