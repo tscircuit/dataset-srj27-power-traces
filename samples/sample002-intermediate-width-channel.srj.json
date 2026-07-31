@@ -1,0 +1,54 @@
+{
+  "id": "sample002-intermediate-width-channel",
+  "layerCount": 2,
+  "minTraceWidth": 0.15,
+  "nominalTraceWidth": 0.8,
+  "defaultObstacleMargin": 0.15,
+  "minTraceToPadEdgeClearance": 0.15,
+  "minViaHoleDiameter": 0.3,
+  "minViaPadDiameter": 0.6,
+  "bounds": { "minX": -6, "maxX": 6, "minY": -4, "maxY": 4 },
+  "obstacles": [
+    {
+      "type": "rect",
+      "obstacleId": "upper-channel-wall",
+      "center": { "x": 0, "y": 2 },
+      "width": 11.8,
+      "height": 3.2,
+      "layers": ["top"],
+      "connectedTo": []
+    },
+    {
+      "type": "rect",
+      "obstacleId": "lower-channel-wall",
+      "center": { "x": 0, "y": -2 },
+      "width": 11.8,
+      "height": 3.2,
+      "layers": ["top"],
+      "connectedTo": []
+    }
+  ],
+  "connections": [
+    {
+      "name": "POWER",
+      "source_trace_id": "source_trace_power",
+      "nominalTraceWidth": 0.8,
+      "pointsToConnect": [
+        { "x": -5, "y": 0, "layer": "top" },
+        { "x": 5, "y": 0, "layer": "top" }
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "type": "pcb_trace",
+      "pcb_trace_id": "power-trace",
+      "connection_name": "POWER",
+      "source_trace_id": "source_trace_power",
+      "route": [
+        { "route_type": "wire", "x": -5, "y": 0, "width": 0.15, "layer": "top" },
+        { "route_type": "wire", "x": 5, "y": 0, "width": 0.15, "layer": "top" }
+      ]
+    }
+  ]
+}

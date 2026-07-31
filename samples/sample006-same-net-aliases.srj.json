@@ -1,0 +1,92 @@
+{
+  "id": "sample006-same-net-aliases",
+  "layerCount": 2,
+  "minTraceWidth": 0.15,
+  "nominalTraceWidth": 0.8,
+  "defaultObstacleMargin": 0.1,
+  "minTraceToPadEdgeClearance": 0.1,
+  "minViaHoleDiameter": 0.3,
+  "minViaPadDiameter": 0.6,
+  "bounds": { "minX": -6, "maxX": 6, "minY": -4, "maxY": 4 },
+  "obstacles": [
+    {
+      "type": "rect",
+      "obstacleId": "power-pad-left",
+      "center": { "x": -4, "y": 0 },
+      "width": 1,
+      "height": 1,
+      "layers": ["top"],
+      "connectedTo": ["POWER", "source_trace_power", "power_in"]
+    },
+    {
+      "type": "rect",
+      "obstacleId": "child-power-pad",
+      "center": { "x": 0, "y": 0.6 },
+      "width": 1,
+      "height": 0.8,
+      "layers": ["top"],
+      "connectedTo": ["CHILD_POWER", "source_trace_power", "power_in"]
+    }
+  ],
+  "connections": [
+    {
+      "name": "POWER",
+      "source_trace_id": "source_trace_power",
+      "mergedConnectionNames": ["CHILD_POWER"],
+      "nominalTraceWidth": 0.8,
+      "pointsToConnect": [
+        {
+          "x": -4,
+          "y": 0,
+          "layer": "top",
+          "pointId": "power_in",
+          "pcb_port_id": "power_in"
+        },
+        {
+          "x": 4,
+          "y": 0,
+          "layer": "top",
+          "pointId": "power_out",
+          "pcb_port_id": "power_out"
+        }
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "type": "pcb_trace",
+      "pcb_trace_id": "power-trace",
+      "connection_name": "POWER",
+      "source_trace_id": "source_trace_power",
+      "mergedConnectionNames": ["CHILD_POWER"],
+      "connectsTo": ["power_in", "power_out"],
+      "route": [
+        { "route_type": "wire", "x": -4, "y": 0, "width": 0.15, "layer": "top" },
+        { "route_type": "wire", "x": 4, "y": 0, "width": 0.15, "layer": "top" }
+      ]
+    },
+    {
+      "type": "pcb_trace",
+      "pcb_trace_id": "child-power-trace",
+      "connection_name": "CHILD_POWER",
+      "source_trace_id": "source_trace_power",
+      "rootConnectionName": "POWER",
+      "connectsTo": ["power_in"],
+      "route": [
+        { "route_type": "wire", "x": -1, "y": 0.6, "width": 0.15, "layer": "top" },
+        { "route_type": "wire", "x": 0, "y": 0.6, "width": 0.15, "layer": "top" },
+        {
+          "route_type": "via",
+          "x": 0,
+          "y": 0.6,
+          "from_layer": "top",
+          "to_layer": "bottom",
+          "via_diameter": 0.6,
+          "via_hole_diameter": 0.3
+        },
+        { "route_type": "wire", "x": 0, "y": 0.6, "width": 0.15, "layer": "bottom" },
+        { "route_type": "wire", "x": 1, "y": 0.6, "width": 0.15, "layer": "bottom" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "manifestVersion": 1,
+  "datasetName": "dataset-srj27-power-traces",
+  "format": "simple_route_json",
+  "pipelineStage": "post_routing_power_trace_expansion",
+  "primaryConsumer": "@tscircuit/power-trace-expander",
+  "samples": [
+    {
+      "sampleId": "sample001",
+      "file": "samples/sample001-straight-underwidth.srj.json",
+      "title": "Straight under-width power route",
+      "origin": "synthetic",
+      "tags": ["planar", "under_width", "unobstructed"]
+    },
+    {
+      "sampleId": "sample002",
+      "file": "samples/sample002-intermediate-width-channel.srj.json",
+      "title": "Intermediate-width constrained channel",
+      "origin": "synthetic",
+      "tags": ["planar", "under_width", "constrained_width", "obstacle"]
+    },
+    {
+      "sampleId": "sample003",
+      "file": "samples/sample003-signal-shove.srj.json",
+      "title": "Power corridor blocked by a lower-width signal",
+      "origin": "synthetic",
+      "tags": ["planar", "under_width", "trace_shove", "mixed_width"]
+    },
+    {
+      "sampleId": "sample004",
+      "file": "samples/sample004-multilayer-necking.srj.json",
+      "title": "Multilayer bypass with terminal necking",
+      "origin": "synthetic",
+      "tags": ["multilayer", "under_width", "via", "terminal_neck"]
+    },
+    {
+      "sampleId": "sample005",
+      "file": "samples/sample005-pad-clearance.srj.json",
+      "title": "Power width and unrelated-pad clearance repair",
+      "origin": "synthetic",
+      "tags": ["planar", "under_width", "pad_clearance", "cleanup"]
+    },
+    {
+      "sampleId": "sample006",
+      "file": "samples/sample006-same-net-aliases.srj.json",
+      "title": "Same-net aliases and fixed via context",
+      "origin": "synthetic",
+      "tags": ["multilayer", "under_width", "same_net", "alias", "fixed_via"]
+    }
+  ]
+}
