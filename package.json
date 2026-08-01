@@ -42,6 +42,7 @@
     "@tsci/seveibar.WS2812B_2020": "1.0.0",
     "@tsci/seveibar.smd-usb-c": "0.0.2",
     "@tscircuit/capacity-autorouter": "0.0.732",
+    "@tscircuit/checks": "^0.0.146",
     "@tscircuit/core": "^0.0.1565",
     "@tscircuit/power-trace-expander": "git+https://github.com/tscircuit/power-trace-expander.git#20a08c8c1cf9d94798333cc4bcdcb8c85bd20418",
     "@tscircuit/solver-utils": "^0.0.19",
