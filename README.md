@@ -53,9 +53,10 @@ bun run check
 ```
 
 `bun run check` validates source provenance, generated metadata, route shape,
-base widths, package exports, and runs every sample through the real
-`PowerTraceExpanderSolver`. CI regenerates the corpus and fails if committed
-artifacts differ.
+base widths, and package exports. It also runs every sample through the real
+`PowerTraceExpanderSolver`, overlays the widened result onto the source board's
+Circuit JSON, and runs the independent `@tscircuit/checks` routing DRC suite.
+CI regenerates the corpus and fails if committed artifacts differ.
 
 To inspect an authored circuit or the generated solver catalog:
 

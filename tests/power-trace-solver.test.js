@@ -1,10 +1,12 @@
 import { describe, expect, test } from "bun:test"
+import { runAllRoutingChecks } from "@tscircuit/checks"
 import { PowerTraceExpanderSolver } from "@tscircuit/power-trace-expander"
 import datasetPackage from "../index.js"
+import { convertSolvedSrjToCircuitJson } from "./helpers/convert-solved-srj-to-circuit-json.js"
 
 describe("power-trace solver compatibility", () => {
-  test("solves and widens every generated real-board sample", () => {
-    for (const { sampleId } of datasetPackage.manifest.samples) {
+  for (const { sampleId, source } of datasetPackage.manifest.samples) {
+    test(`${sampleId} solves, widens, and passes Circuit JSON routing DRC`, async () => {
       const problem = structuredClone(datasetPackage.dataset[sampleId])
       const solver = new PowerTraceExpanderSolver(problem)
       let steps = 0
@@ -17,9 +19,9 @@ describe("power-trace solver compatibility", () => {
 
       expect(solver.failed).toBeFalse()
       expect(solver.solved).toBeTrue()
+      const solvedTraces = solver.getOutput()
       expect(
-        solver
-          .getOutput()
+        solvedTraces
           .flatMap((trace) => trace.route)
           .some(
             (point) =>
@@ -27,6 +29,16 @@ describe("power-trace solver compatibility", () => {
               point.width > problem.minTraceWidth + 1e-6,
           ),
       ).toBeTrue()
-    }
-  }, 60_000)
+
+      const solvedCircuitJson = await convertSolvedSrjToCircuitJson({
+        sourcePath: source,
+        solvedTraces,
+      })
+      const routingDrcErrors = (await runAllRoutingChecks(solvedCircuitJson))
+        .filter((result) => result.type.endsWith("_error"))
+        .map(({ type, message }) => `${sampleId}: ${type}: ${message}`)
+
+      expect(routingDrcErrors).toEqual([])
+    }, 60_000)
+  }
 })
