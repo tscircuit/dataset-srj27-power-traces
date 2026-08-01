@@ -67,8 +67,10 @@ bun run build:site
 ```
 
 `bun run start` opens React Cosmos with one step-through solver fixture per
-board. `bun run build:site` writes the Vercel-ready catalog to
-`cosmos-export/`.
+board. The debugger uses the same layer-aware SRJ graphics conversion as
+`tscircuit-autorouter`: top and bottom traces are visually distinct, vias span
+their PCB layers, and footprint pads are shown as labeled obstacles. `bun run
+build:site` writes the Vercel-ready catalog to `cosmos-export/`.
 
 ## Usage
 

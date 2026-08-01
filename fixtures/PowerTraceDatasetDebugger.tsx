@@ -2,6 +2,20 @@ import type { SimpleRouteJson } from "tscircuit"
 import { PowerTraceExpanderSolver } from "@tscircuit/power-trace-expander"
 import { GenericSolverDebugger } from "@tscircuit/solver-utils/react"
 import { useMemo } from "react"
+import { getPowerTraceGraphics } from "./getPowerTraceGraphics"
+
+class LayerAwarePowerTraceExpanderSolver extends PowerTraceExpanderSolver {
+  constructor(private readonly visualizationProblem: SimpleRouteJson) {
+    super(structuredClone(visualizationProblem))
+  }
+
+  override visualize() {
+    return getPowerTraceGraphics({
+      problem: this.visualizationProblem,
+      traces: this.getOutput(),
+    })
+  }
+}
 
 export const PowerTraceDatasetDebugger = ({
   problem,
@@ -26,7 +40,7 @@ export const PowerTraceDatasetDebugger = ({
     }
   ).metadata
   const solver = useMemo(
-    () => new PowerTraceExpanderSolver(structuredClone(problem)),
+    () => new LayerAwarePowerTraceExpanderSolver(problem),
     [problem],
   )
 
